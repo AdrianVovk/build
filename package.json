@@ -4,28 +4,18 @@
 	"description": "Used to build gradle projects",
     "repository":{
         "type": "git",
-        "url": "https://github.com/AdrianVovk/toolbar-icons"
+        "url": "https://github.com/AdrianVovk/build"
     },
 	"keywords": [
-		"toolbar",
-		"tool-bar"
+		"gradle",
+		"build"
 	],
-	"license": "MIT",
-	"main": "./lib/toolbar-icons.coffee",
+	"license": "APSL-2.0",
+	"main": "./lib/build.coffee",
 	"dependencies": {
 		"atom-package-deps": "^3.0.7"
 	},
 	"engines": {
 		"atom": ">0.50.0"
-	},
-	"package-deps": [
-		"tool-bar"
-	],
-	"consumedServices": {
-		"tool-bar": {
-			"versions": {
-				"^0 || ^1": "consumeToolBar"
-			}
-		}
 	}
 }
