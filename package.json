@@ -1,0 +1,31 @@
+{
+	"name": "build",
+	"version": "0.0.01",
+	"description": "Used to build gradle projects",
+    "repository":{
+        "type": "git",
+        "url": "https://github.com/AdrianVovk/toolbar-icons"
+    },
+	"keywords": [
+		"toolbar",
+		"tool-bar"
+	],
+	"license": "MIT",
+	"main": "./lib/toolbar-icons.coffee",
+	"dependencies": {
+		"atom-package-deps": "^3.0.7"
+	},
+	"engines": {
+		"atom": ">0.50.0"
+	},
+	"package-deps": [
+		"tool-bar"
+	],
+	"consumedServices": {
+		"tool-bar": {
+			"versions": {
+				"^0 || ^1": "consumeToolBar"
+			}
+		}
+	}
+}
