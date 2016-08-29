@@ -12,10 +12,10 @@
 	],
 	"license": "APSL-2.0",
 	"main": "./lib/build.coffee",
-	"dependencies": {
-		"atom-package-deps": "^3.0.7"
-	},
 	"engines": {
 		"atom": ">0.50.0"
+	},
+	"dependencies": {
+    "atom-space-pen-views": "^2.0.0"
 	}
 }
