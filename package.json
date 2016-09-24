@@ -1,6 +1,6 @@
 {
   "name": "build-fusion",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Used to build gradle projects",
   "repository": {
     "type": "git",
