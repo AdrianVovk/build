@@ -4,7 +4,7 @@
   "description": "Used to build gradle projects",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AdrianVovk/build"
+    "url": "https://github.com/AdrianVovk/build-fusion"
   },
   "keywords": [
     "gradle",
