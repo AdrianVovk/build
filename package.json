@@ -11,7 +11,7 @@
     "build"
   ],
   "license": "APSL-2.0",
-  "main": "./lib/build.coffee",
+  "main": "./lib/build",
   "engines": {
     "atom": ">0.50.0"
   },
