@@ -1,21 +1,31 @@
 {
   "name": "build-fusion",
   "version": "0.0.3",
-  "description": "Used to build gradle projects",
+  "description": "Used to build Fusion projects",
   "repository": {
     "type": "git",
     "url": "https://github.com/AdrianVovk/build-fusion"
   },
   "keywords": [
     "gradle",
-    "build"
+    "build",
+    "kotlin",
+    "fusion"
   ],
+  "consumedServices": {
+    "status-bar": {
+      "versions": {
+        "^1.0.0": "consumeStatusBar"
+      }
+    }
+  },
   "license": "APSL-2.0",
   "main": "./lib/build",
   "engines": {
     "atom": ">0.50.0"
   },
   "dependencies": {
-    "atom-space-pen-views": "^2.0.0"
+    "atom-space-pen-views": "^2.0.0",
+    "fs-plus":"^2.9.2"
   }
 }

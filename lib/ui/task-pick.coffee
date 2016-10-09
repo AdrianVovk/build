@@ -19,7 +19,7 @@ class TaskPicker extends View
     @commands.add atom.commands.add 'atom-text-editor', 'core:cancel': (e) => @close()
 
     @commands.add atom.commands.add 'atom-text-editor', 'core:confirm': (e) =>
-      callback(@taskInput.getText())
+      callback(@taskInput.getText().split " ")
       @close()
 
   close: ->
