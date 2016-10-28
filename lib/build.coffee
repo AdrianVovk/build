@@ -80,7 +80,7 @@ module.exports = build =
       'build:run-task': (event) => taskPick((tasks) => @runTask(tasks))
       'build:install-fusion-wrapper': (event) => @runTask('wrapper')
       'build:cancel': (event) => @cancelCompmile()
-      'build:update-fusion': (event) => @update(true, false)
+      'build:update-fusion': (event) => @update(false, false)
 
     if atom.inDevMode()
       @subscriptions.add atom.commands.add 'atom-workspace',
