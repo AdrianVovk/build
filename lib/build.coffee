@@ -74,7 +74,7 @@ module.exports = build =
     @update(true, false)
 
     @subscriptions.add atom.commands.add 'atom-workspace',
-      'build:run': (event) => platformPick 'run-', (tasks) => @runTask(tasks)
+      'build:run': (event) => @runTask('run') #platformPick 'run-', (tasks) => @runTask(tasks)
       'build:debug': (event) => notifyInfo 'Debug feature coming soon' # TODO
       'build:release': (event) => platformPick 'release-', (tasks) => @runTask(tasks)
       'build:run-task': (event) => taskPick((tasks) => @runTask(tasks))
