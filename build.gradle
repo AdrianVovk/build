@@ -1,0 +1,11 @@
+task 'default' << {
+  println('This task was included by default')
+}
+
+task run << {
+  println('RUNNING')
+}
+
+task jar << {
+  println('RELEASING')
+}

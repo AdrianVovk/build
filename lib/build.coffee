@@ -22,37 +22,76 @@ module.exports = build =
       default: true
       title: 'Show notifications'
       description: 'Errors will always be displayed'
-      order: 1
+      order: 2
     useWrapper: # Do we use the fusion wrapper?
       type: 'boolean'
       default: true
       description: 'Use Fusion Wrapper. This allows projects intended for older Fusion versions to be run with the correct configuration.'
-      order: 2
+      order: 3
     useNightlyBuilds:
       type: 'boolean'
       default: false
       description: 'Use nightly builds of Fusion Compiler components'
-      order: 3
-    features:
-      # Fusion Compiler Goodies
-      type: 'object'
       order: 4
+    advanced:
+      type: 'object'
+      order: 5
       properties:
-        useLiveCompile:
-          type: 'boolean'
-          default: true
-          title: 'Use Live Compile'
-          description: 'Use Live Compile to compile code while it is being written, improving build speeds'
-        useInstantRun:
-          type: 'boolean'
-          default: true
-          title: 'Use Instant Run'
-          description: 'Use Instant Run to run code without packaging it. Improves build speeds'
-        useSmartScale:
-          type: 'boolean'
-          default: true
-          title: 'Use Smart Scale'
-          description: 'Use Smart Scale to automatically sort and prioritize tasks, allowing maximum efficiency'
+        preset:
+          type: 'string'
+          default: 'gradle'
+          title: 'Preset'
+          order: 1
+          enum: [
+            {value: 'gradle', description: 'Compile standard Gradle projects'},
+            {value: 'avian', description: 'Compile Gradle projects and package them with Avian (COMING SOON)'}
+            {value: 'fusion', description: 'Compile projects designed for the Fusion Compiler (COMING SOON)'},
+            {value: 'custom', description: 'Compile projects with your custom configuration'}
+          ]
+        runTask:
+          type: 'string'
+          default: 'run'
+          title: 'Run Task'
+          order: 2
+        releaseTask:
+          type: 'string'
+          default: 'jar'
+          title: 'Release Task'
+          order: 3
+        buildFile:
+          type: 'string'
+          default: 'build.gradle'
+          title: 'Build File'
+          description: 'The file name of the build instructions that the Fusion Compiler should run'
+          order: 4
+        defaultTasks:
+          type: 'array'
+          default: ['']
+          title: 'Default Tasks'
+          description: 'Tasks to be run whenever any other task is run'
+          items:
+            type: 'string'
+
+
+    # features: # Fusion Compiler Goodies
+    #   type: 'object'
+    #   order: 4
+    #   properties:
+    #     useLiveCompile:
+    #       type: 'boolean'
+    #       default: true
+    #       title: 'Use Live Compile'
+    #       description: 'Use Live Compile to compile code while it is being written, improving build speeds'
+    #     useInstantRun:
+    #       type: 'boolean'
+    #       default: true
+    #       title: 'Use Instant Run'
+    #       description: 'Use Instant Run to run code without packaging it. Improves build speeds'
+    #     useSmartScale:
+    #       type: 'boolean'
+    #       default: true
+    #       title: 'Use Smart Scale'
+    #       description: 'Use Smart Scale to automatically sort and prioritize tasks, allowing maximum efficiency'
 
   # Lifecycle
 
@@ -62,26 +101,55 @@ module.exports = build =
 
     @subscriptions = new CompositeDisposable
 
+    # Compiler configuration
+    @subscriptions.add atom.config.onDidChange 'build-fusion.advanced.preset', ({oldValue, newValue}) =>
+      switch newValue
+        when 'gradle'
+          runTask = 'run'
+          releaseTask = 'jar'
+          buildFile = 'build.gradle'
+          defaultTasks = ['']
+        when 'avian'
+          runTask = 'run'
+          releaseTask = 'jar'
+          buildFile = 'build.gradle'
+          defaultTasks = ['']
+        when 'fusion'
+          runTask = 'flux-run'
+          releaseTask = 'flux-release'
+          buildFile = 'manifest.kts'
+          defaultTasks = ['']
+
+      atom.config.set 'build-fusion.advanced.runTask', runTask
+      atom.config.set 'build-fusion.advanced.releaseTask', releaseTask
+      atom.config.set 'build-fusion.advanced.buildFile', buildFile
+      atom.config.set 'build-fusion.advanced.defaultTasks', defaultTasks
+
+    # Updating and checks
+    @fusionStore = path.join(atom.getConfigDirPath(), 'build-fusion')
+    @gradlePath = path.join(@fusionStore, 'gradle-dist')
+    @avianPath = path.join(@fusionStore, 'avian-dist')
+    @update(true, false)
+
     @subscriptions.add atom.config.onDidChange 'build-fusion.useNightlyBuilds', ({oldValue, newValue}) =>
       unless newValue
         @purgeBinary()
         notifyInfo 'Restoring Stable Version of the Fusion Compiler', icon: 'history'
       @update(true, false)
 
-    @fusionStore = path.join(atom.getConfigDirPath(), 'build-fusion')
-    @gradlePath = path.join(@fusionStore, 'gradle-dist')
-    @avianPath = path.join(@fusionStore, 'avian-dist')
-    @update(true, false)
-
+    # Commands
     @subscriptions.add atom.commands.add 'atom-workspace',
-      'build:run': (event) => @runTask('run') #platformPick 'run-', (tasks) => @runTask(tasks)
+      'build:run': (event) =>
+        prop = atom.config.get 'build-fusion.advanced.runTask'
+        if prop isnt 'flux-run' then @runTask(prop) else platformPick 'run-', (tasks) => @runTask(tasks)
       'build:debug': (event) => notifyInfo 'Debug feature coming soon' # TODO
-      'build:release': (event) => platformPick 'release-', (tasks) => @runTask(tasks)
+      'build:release': (event) =>
+        prop = atom.config.get 'build-fusion.advanced.releaseTask'
+        if prop isnt 'flux-release' then @runTask(prop) else platformPick 'release-', (tasks) => @runTask(tasks)
       'build:run-task': (event) => taskPick((tasks) => @runTask(tasks))
       'build:install-fusion-wrapper': (event) => @runTask('wrapper')
       'build:cancel': (event) => @cancelCompmile()
       'build:update-fusion': (event) => @update(false, false)
-
     if atom.inDevMode()
       @subscriptions.add atom.commands.add 'atom-workspace',
         'build:purge-binary': (event) => @purgeBinary()
@@ -96,13 +164,12 @@ module.exports = build =
     @purgeBinary() if atom.packages.isPackageDisabled('build-fusion') # Remove any downloaded gradle and avian disributions
 
   # Command Runner
-
   cmd: (args, dir, gradlePath) => # Runs command with given arguments
     new Promise (resolve, reject) =>
       wrapper = path.join(dir.getPath(), 'gradlew') if atom.config.get 'build-fusion.useWrapper'
       build.proc = new BufferedProcess
         command: if fs.isFileSync(wrapper) then wrapper else path.join(gradlePath, 'bin', 'gradle')
-        args: ["-b", "manifest.kt"].concat(args)
+        args: ["-b", atom.config.get 'build-fusion.advanced.buildFile'].concat(atom.config.get 'build-fusion.advanced.defaultTasks').concat(args)
         options: {cwd: dir.getPath(), env: process.env}
         stdout: (output) -> console.log "Build Output: #{output}"
         stderr: (error) ->
