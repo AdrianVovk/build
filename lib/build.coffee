@@ -66,7 +66,7 @@ module.exports = build =
           order: 4
         defaultTasks:
           type: 'array'
-          default: ['']
+          default: []
           title: 'Default Tasks'
           description: 'Tasks to be run whenever any other task is run'
           items:
@@ -108,17 +108,17 @@ module.exports = build =
           runTask = 'run'
           releaseTask = 'jar'
           buildFile = 'build.gradle'
-          defaultTasks = ['']
+          defaultTasks = []
         when 'avian'
           runTask = 'run'
           releaseTask = 'jar'
           buildFile = 'build.gradle'
-          defaultTasks = ['']
+          defaultTasks = []
         when 'fusion'
           runTask = 'flux-run'
           releaseTask = 'flux-release'
           buildFile = 'manifest.kts'
-          defaultTasks = ['']
+          defaultTasks = []
 
       atom.config.set 'build-fusion.advanced.runTask', runTask
       atom.config.set 'build-fusion.advanced.releaseTask', releaseTask
@@ -169,7 +169,7 @@ module.exports = build =
       wrapper = path.join(dir.getPath(), 'gradlew') if atom.config.get 'build-fusion.useWrapper'
       build.proc = new BufferedProcess
         command: if fs.isFileSync(wrapper) then wrapper else path.join(gradlePath, 'bin', 'gradle')
-        args: ["-b", atom.config.get 'build-fusion.advanced.buildFile'].concat(atom.config.get 'build-fusion.advanced.defaultTasks').concat(args)
+        args: ["-b", atom.config.get 'build-fusion.advanced.buildFile'].concat(atom.config.get 'build-fusion.advanced.defaultTasks')?.concat(args)
         options: {cwd: dir.getPath(), env: process.env}
         stdout: (output) -> console.log "Build Output: #{output}"
         stderr: (error) ->
