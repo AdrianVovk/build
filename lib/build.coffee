@@ -177,7 +177,7 @@ module.exports = build =
           console.error "Build error: #{error}"
         exit: (code) ->
           if code is 0
-            notifySuccess "Fusion Build Complete", detail: "Output Location: #{path.join(dir.getPath(), 'out')}"
+            notifySuccess "Fusion Build Complete" # TODO, detail: "Output Location: #{path.join(dir.getPath(), 'out')}"
             console.log "Build Complete"
             resolve "Build Complete"
           else
