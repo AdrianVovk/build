@@ -1,0 +1,5 @@
+'.platform-darwin':
+  'cmd-f5': 'build:run'
+
+'.platform-win32, .platform-linux':
+  'ctrl-f5': 'build:run'

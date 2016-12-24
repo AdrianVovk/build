@@ -71,7 +71,10 @@ module.exports = build =
           description: 'Tasks to be run whenever any other task is run'
           items:
             type: 'string'
-
+    indexProject:
+      type: 'boolean'
+      default: true
+      description: 'Build a model of your project in order to provide autocomplete and other code-dependant features'
 
     # features: # Fusion Compiler Goodies
     #   type: 'object'
@@ -93,6 +96,10 @@ module.exports = build =
     #       title: 'Use Smart Scale'
     #       description: 'Use Smart Scale to automatically sort and prioritize tasks, allowing maximum efficiency'
 
+
+  # Allow other packages to interact with the compiler
+  provideCommuncations: () -> this # TODO: DANGEROUS! Rouge package can completely uninstall and mess up compiler
+
   # Lifecycle
 
   activate: ->
@@ -108,6 +115,11 @@ module.exports = build =
           runTask = 'run'
           releaseTask = 'jar'
           buildFile = 'build.gradle'
+          defaultTasks = []
+        when 'android'
+          runTask = ''
+          releaseTask = ''
+          buildFile = ''
           defaultTasks = []
         when 'avian'
           runTask = 'run'
@@ -147,9 +159,10 @@ module.exports = build =
         prop = atom.config.get 'build-fusion.advanced.releaseTask'
         if prop isnt 'flux-release' then @runTask(prop) else platformPick 'release-', (tasks) => @runTask(tasks)
       'build:run-task': (event) => taskPick((tasks) => @runTask(tasks))
-      'build:install-fusion-wrapper': (event) => @runTask('wrapper')
+      'build:wrapper': (event) => @runTask('wrapper')
       'build:cancel': (event) => @cancelCompmile()
       'build:update-fusion': (event) => @update(false, false)
+
     if atom.inDevMode()
       @subscriptions.add atom.commands.add 'atom-workspace',
         'build:purge-binary': (event) => @purgeBinary()
@@ -164,7 +177,8 @@ module.exports = build =
     @purgeBinary() if atom.packages.isPackageDisabled('build-fusion') # Remove any downloaded gradle and avian disributions
 
   # Command Runner
-  cmd: (args, dir, gradlePath) => # Runs command with given arguments
+  cmd: (args, dir, gradlePath) -> # Runs command with given arguments
+    @cancelCompmile(true)
     new Promise (resolve, reject) =>
       wrapper = path.join(dir.getPath(), 'gradlew') if atom.config.get 'build-fusion.useWrapper'
       build.proc = new BufferedProcess
@@ -187,18 +201,21 @@ module.exports = build =
       build.proc.onWillThrowError (errorObject) ->
         reject errorObject.error.toString()
 
-  cancelCompmile: -> # Kills compiler process
+  cancelCompmile: (silent) -> # Kills compiler process
     if @proc
       @proc.kill()
       notifySuccess "Fusion Build Cancelled", icon: 'x'
     else
-      atom.notifications.addError "Fusion Build Not Running"
+      atom.notifications.addError("Fusion Build Not Running") unless silent
 
-  runTask: (tasks) ->
+  runTask: (tasks, continuous) ->
     notifyInfo "Fusion Build Starting", detail: "Tasks: #{tasks.toString()}"
 
     # Count up priority here
-    @args = tasks
+    if continuous
+      @args = ['--continuous'].concat(tasks)
+    else
+      @args = tasks
 
     # Figure out which project to compile
     @dir = atom.project.getDirectories().filter((d) -> d.contains(atom.workspace.getActiveTextEditor()?.getPath()))[0]
@@ -272,7 +289,6 @@ module.exports = build =
           ]
       else
         notifyInfo('Fusion Compiler Not Updated', detail: "Already up to date\nGradle Version: #{@gradleCurrentJson.version}\nAvian Version: #{@avianCurrentJson.version}", icon: 'stop') unless silent
-
 
   updateGradle: (silent = false, install = true) ->
     console.log 'Updating Gradle Binary'

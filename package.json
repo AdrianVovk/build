@@ -19,6 +19,13 @@
       }
     }
   },
+  "providedServices": {
+    "build.remote": {
+      "versions": {
+        "0.0.1": "provideCommuncations"
+      }
+    }
+  },
   "license": "APSL-2.0",
   "main": "./lib/build",
   "engines": {
