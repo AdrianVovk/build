@@ -106,6 +106,11 @@ module.exports = build =
     taskPick = require './ui/task-pick'
     platformPick = require './ui/platform-pick'
 
+    OutputView = require('./ui/output-view')
+    @outputView = new OutputView
+    atom.workspace.addBottomPanel(item: @outputView)
+    @outputView.finish()
+
     @subscriptions = new CompositeDisposable
 
     # Compiler configuration
@@ -177,25 +182,31 @@ module.exports = build =
     @purgeBinary() if atom.packages.isPackageDisabled('build-fusion') # Remove any downloaded gradle and avian disributions
 
   # Command Runner
-  cmd: (args, dir, gradlePath) -> # Runs command with given arguments
+  cmd: (args, dir, gradlePath, silent) -> # Runs command with given arguments
     @cancelCompmile(true)
+    @outputView.reset()
     new Promise (resolve, reject) =>
       wrapper = path.join(dir.getPath(), 'gradlew') if atom.config.get 'build-fusion.useWrapper'
       build.proc = new BufferedProcess
         command: if fs.isFileSync(wrapper) then wrapper else path.join(gradlePath, 'bin', 'gradle')
         args: ["-b", atom.config.get 'build-fusion.advanced.buildFile'].concat(atom.config.get 'build-fusion.advanced.defaultTasks')?.concat(args)
         options: {cwd: dir.getPath(), env: process.env}
-        stdout: (output) -> console.log "Build Output: #{output}"
-        stderr: (error) ->
-          notifyWarn 'Fusion Error', detail: "Details: #{error}"
+        stdout: (output) =>
+          @outputView.add(output, true) unless silent # "true" added so it doesn't pop up if there are no errors
+          console.log "Build Output: #{output}"
+        stderr: (error) =>
+          @outputView.add(error) unless silent
+          #notifyWarn 'Fusion Error', detail: "Check log" unless silent
           console.error "Build error: #{error}"
-        exit: (code) ->
+        exit: (code) =>
+          @outputView.add("\n\u2B91 Exit Code: #{code}") unless silent
+          @outputView.finish() unless silent
           if code is 0
-            notifySuccess "Fusion Build Complete" # TODO, detail: "Output Location: #{path.join(dir.getPath(), 'out')}"
+            notifySuccess "Fusion Build Complete" unless silent # TODO, detail: "Output Location: #{path.join(dir.getPath(), 'out')}"
             console.log "Build Complete"
             resolve "Build Complete"
           else
-            atom.notifications.addError "Fusion Build Failed", detail: "Details: Exit Code #{code}"
+            atom.notifications.addError "Fusion Build Failed", detail: "Details: Exit Code #{code}\nCheck the log" unless silent
             console.error "Build Error: Exit Code #{code}"
             reject code.toString()
       build.proc.onWillThrowError (errorObject) ->
@@ -204,12 +215,12 @@ module.exports = build =
   cancelCompmile: (silent) -> # Kills compiler process
     if @proc
       @proc.kill()
-      notifySuccess "Fusion Build Cancelled", icon: 'x'
+      notifySuccess "Fusion Build Cancelled", icon: 'x' unless silent
     else
       atom.notifications.addError("Fusion Build Not Running") unless silent
 
-  runTask: (tasks, continuous) ->
-    notifyInfo "Fusion Build Starting", detail: "Tasks: #{tasks.toString()}"
+  runTask: (tasks, continuous, silent = false) ->
+    notifyInfo "Fusion Build Starting", detail: "Tasks: #{tasks.toString()}" unless silent
 
     # Count up priority here
     if continuous
@@ -220,14 +231,22 @@ module.exports = build =
     # Figure out which project to compile
     @dir = atom.project.getDirectories().filter((d) -> d.contains(atom.workspace.getActiveTextEditor()?.getPath()))[0]
 
-    @cmd @args, @dir, @gradlePath # Run it
+    @cmd @args, @dir, @gradlePath, silent # Run it
 
   # UI Modifications
 
-  consumeStatusBar: (statusBar) -> # TODO
-    # TODO: FIX THIS STUFF
-    #BuildStatus = require './ui/build-status'
-    #statusBar.addRightTile (item: new BuildStatus, priority: 0)
+  consumeStatusBar: (statusBar) ->
+    div = document.createElement 'div'
+    div.classList.add 'inline-block'
+    icon = document.createElement 'span'
+    icon.classList.add 'icon', 'icon-circuit-board'
+    link = document.createElement 'a'
+    link.appendChild icon
+    link.onclick = (e) => @outputView.toggle()
+    div.appendChild link
+    
+    atom.tooltips.add div, { title: "Gradle Log"}
+    statusBar.addRightTile item: div, priority: -1
 
   # Binary Management
 
